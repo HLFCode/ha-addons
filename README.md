@@ -11,7 +11,7 @@ Install Heatmiser.
 PLEASE NOTE: Heatmiser is untested and may be broken.
 Follow Documentation, Setup and Install of the Add-on  
 ### Directly on Home Assistant  
-Copy the <code>heatmiser</code> folder to Home Assistant's <code>addons</code> folder
+Copy the <code>heatmiser</code> folder to Home Assistant's <code>addons</code> folder (you will probably need Samba installed for this)  
 Go to Settings->Add-ons  
 Click <code>ADD-ON STORE</code>  
 Click the menu bar (3 dots) in the top right corner and click <code>Check for Update</code>  
