@@ -1,0 +1,36 @@
+name: "Heatmiser"
+description: >
+    Access to Heatmiser Thermostats.
+version: "0.1.0"
+slug: "heatmiser"
+init: false
+startup: system
+discovery:
+  - mqtt
+panel_icon: "mdi:thermostat"
+services:
+ - mqtt:need
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+options:
+  use_serial: true
+  homeassistant: true
+boot: auto
+schema:
+  use_serial: bool
+  device: device(subsystem=tty)?
+  tcp_address: str?
+  network_name: str?
+  mqtt_host: str?
+  mqtt_port: str?
+  mqtt_prefix: str?
+  mqtt_username: str?
+  mqtt_password: str?
+  scan_interval: int(60,)?
+  max_address: int(0,255)?
+  homeassistant: bool?
+  loglevel: list(debug|info|notice|warning|error)?

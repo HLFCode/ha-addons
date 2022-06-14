@@ -1,0 +1,40 @@
+configuration:
+    use_serial:
+        name: "Use Serial Device (default: true)"
+        description: "True for physical (serial) device, false for a network (tcp) connection address"
+    device:
+        name: Serial-RS485 Device
+        description: Select the physical serial device if using a serial-RS485 device. If using tcp select a random device (it will not be used)
+    tcp_address:
+        name: "TCP Network Address"
+        description: "If not using a serial-RS485 device supply a tcp address in the form <ip address>:<port> e.g. 127.0.0.1:1024"
+    network_name:
+        name: "Heatmiser Network Name (default: heatmiser_network)"
+        description: The name of the heatmiser thermostat network
+    mqtt_host:
+        name: "MQTT Host (default: blank for autoconfigure)"
+        description: Override automatically configured MQTT host
+    mqtt_port:
+        name: "MQTT Server Port (default: blank for autoconfigure)"
+        description: Override automatically configured MQTT port
+    mqtt_username:
+        name: "MQTT Username (default: blank for autoconfigure)"
+        description: Override automatically configured MQTT username
+    mqtt_password:
+        name: "MQTT Password (default: blank for autoconfigure)"
+        description: Override automatically configured MQTT password
+    mqtt_prefix:
+        name: "MQTT Prefix (default: heatmiser)"
+        description: Override the default MQTT discovery topic prefix
+    scan_interval:
+        name: "Scan Interval (secs, default: 60)"
+        description: The interval between thermostat scans
+    homeassistant:
+        name: "Integrate with Home Assistant (default: true)"
+        description: Integrate with Home Assistant auto-discovery
+    max_address:
+        name: "Max Scanning Address (default: 10)"
+        description: The highest addressed thermostat (to optimise startup scanning)
+    loglevel:
+        name: "Log Level (default: info)"
+        description: The logging level reported in the addon log
