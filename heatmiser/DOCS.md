@@ -1,7 +1,8 @@
 # Home Assistant Add-on: Heatmiser
 Early Heatmiser thermostats (e.g. PTR-N) are linked to a Heatmiser UH1 module via an RS485 2-wire bus.  
-This add-on replaces the UH1 module functionality via a serial to RS485 dongle.  
-The program is a supervisor add-on (docker container) in Home Assistant.  
+This add-on replaces the Heatmiser UH1 module functionality via a serial to RS485 dongle.  
+Connection to the RS485 network can be direct (serial port) or over tcp with a remote computer.  
+The code includes a supervisor add-on (docker container) in Home Assistant.  
 
 At startup the RS485 bus is scanned and all thermostats which respond are retained.
 
@@ -111,3 +112,15 @@ homeassistant
         House_1_Current_Temp
             available = online
 ```
+---  
+## History/Credits
+Based on original work by [Neil Trimboy](https://code.google.com/archive/p/heatmiser-monitor-control/)  
+Developed by [andylockran](https://github.com/andylockran/heatmiserV3)  
+The latter is used by the Home Assistant [Heatmiser](https://www.home-assistant.io/integrations/heatmiser/) integration  
+This was developed to:
+- enable standalone operation
+- mqtt interface
+- mqtt Home Assistant auto-discovery (optional)
+- automatic recovery from RS485/tcp faults
+- automatic discovery of thermostats
+The Python code can be run on a computer remote from Home Assistant (e.g. as a standalone daemon) and communicate via mqtt
