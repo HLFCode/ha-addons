@@ -122,5 +122,6 @@ This was developed to:
 - mqtt interface
 - mqtt Home Assistant auto-discovery (optional)
 - automatic recovery from RS485/tcp faults
-- automatic discovery of thermostats
+- automatic discovery of thermostats  
+    
 The Python code can be run on a computer remote from Home Assistant (e.g. as a standalone daemon) and communicate via mqtt
