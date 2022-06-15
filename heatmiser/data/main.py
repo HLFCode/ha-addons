@@ -8,7 +8,7 @@ Home assistant compatible including discovery of thermostats as climate devices
 """
 
 import logging
-from paho.mqtt import client as mqtt_client#, MQTT_ERR_SUCCESS, MQTT_ERR_NO_CONN, MQTT_ERR_QUEUE_SIZE
+from paho.mqtt import client as mqtt_client
 from datetime import datetime, timedelta
 import random
 import time
@@ -16,8 +16,8 @@ import argparse
 import sys
 
 from homeassistant import HOMEASSISTANT, CLIMATEDISCOVERYBASE, SENSORDISCOVERYBASE, ha_climate_config, ha_sensor_config
-from heatmiser import HeatmiserThermostat, HEATMISER
-from connection import HeatmiserUH1
+from heatmiserThermostat import HeatmiserThermostat, HEATMISER
+from heatmiserHub import HeatmiserHub
 from utils import GracefulKiller
 
 __author__ = "Mike Ford"
@@ -87,7 +87,7 @@ def mqtt_on_message(client, userdata, message):
                         if "run_mode" in thermostat.write_properties:
                             if value in ["heat", "off"]:
                                 if thermostat.update_thermostat(thermostat.write_properties["run_mode"], "heating" if value == "heat" else "frost protect"):
-                                    _publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/mode", value)
+                                    publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/mode", value)
                             else:
                                 _LOGGER.error(f"Home assistant mode command needs to be either 'heat' or 'off', received {value}")
                         else:
@@ -95,20 +95,20 @@ def mqtt_on_message(client, userdata, message):
                     elif cmd == "targetTempCmd":
                         # TODO check limits and validity of value
                         if thermostat.update_thermostat(thermostat.write_properties["room_target_temp"], value):
-                            _publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/target_temp", value)
+                            publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/target_temp", value)
                     elif cmd == "presetCmd":
                         if value == "hold 1h":
                             thermostat.update_thermostat(thermostat.write_properties["holiday_hours"], 0)
                             if thermostat.update_thermostat(thermostat.write_properties["temp_hold_minutes"], 60):
-                                _publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/presetState", cmd)
+                                publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/presetState", cmd)
                         elif value == "holiday 1d":
                             thermostat.update_thermostat(thermostat.write_properties["temp_hold_minutes"], 0)
                             if thermostat.update_thermostat(thermostat.write_properties["holiday_hours"], 24):
-                                _publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/presetState", cmd)
+                                publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/presetState", cmd)
                         elif value == "none":
                             thermostat.update_thermostat(thermostat.write_properties["temp_hold_minutes"], 0)
                             thermostat.update_thermostat(thermostat.write_properties["holiday_hours"], 0)
-                            _publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/presetState", cmd)
+                            publish_base(client, f"{CLIMATEDISCOVERYBASE}/{thermo_name}/presetState", cmd)
                     else:
                         _LOGGER.error(f"Received invalid mqtt message {message.topic}: Not recognised")
                 else:
@@ -133,7 +133,8 @@ def mqtt_on_connect(client, userdata, flags, rc):
         _LOGGER.error(f"Failed to connect to MQTT broker, {MQTT_CONNECT_CODES[rc]} ({rc})")
 # end mqtt event handlers----------------
 
-def _publish_base(client : mqtt_client, topic : str, payload : str):
+# mqtt publishing-------------
+def publish_base(client : mqtt_client, topic : str, payload : str):
     """
     Publishes to the mqtt broker on topic with payload
     Returns True or False depending on publishing success
@@ -164,7 +165,7 @@ def publish(client : mqtt_client, prefix :str, name : str, parameter : str, valu
     Returns True or False depending on publishing success
     """
     topic = f"{prefix}/{name}/{parameter}"
-    return _publish_base(client, topic, value)
+    return publish_base(client, topic, value)
 
 def publish_config(thermostat: HeatmiserThermostat):
     """
@@ -178,12 +179,14 @@ def publish_config(thermostat: HeatmiserThermostat):
     topic = f"{CLIMATEDISCOVERYBASE}/{name}"
     payload = ha_climate_config(name, thermostat.address, read_props["Units"], read_props['Vendor'], 
         read_props["Type"], read_props["Version"])
-    _publish_base(client, topic + "/config", payload)
+    publish_base(client, topic + "/config", payload)
     
     topic = f"{SENSORDISCOVERYBASE}/{name}_Current_Temp"
     payload = ha_sensor_config(name, "Current Temp", thermostat.address, read_props["Units"], read_props['Vendor'], 
         read_props["Type"], read_props["Version"])
-    _publish_base(client, topic + "/config", payload)
+    publish_base(client, topic + "/config", payload)
+# end mqtt publishing-------------
+
 
 # Executable code starts here
 if __name__ == '__main__':
@@ -226,8 +229,8 @@ if __name__ == '__main__':
     log_level = args.loglevel.upper()
     _LOGGER.setLevel(log_level)
     logging.getLogger(HEATMISER).setLevel(log_level)
-    logging.getLogger('connection').setLevel(log_level)
-    logging.getLogger('homeassistant').setLevel(log_level)
+    logging.getLogger('heatmiserHub').setLevel(log_level)
+    logging.getLogger('heatmiserThermostat').setLevel(log_level)
 
     _LOGGER.info('Startup')
 
@@ -236,20 +239,20 @@ if __name__ == '__main__':
 
     # Create a communications hub on the serial device
     _LOGGER.info(f"Using '{args.device}', scan interval {args.scan_interval}s")
-    HeatmiserUH1 = HeatmiserUH1(args.device, args.network_name)
-    _LOGGER.info(f"Scanning '{HeatmiserUH1.name()}' for thermostats from address 0 to {args.max_address}")
+    hub = HeatmiserHub(args.device, args.network_name)
+    _LOGGER.info(f"Scanning '{hub.name()}' for thermostats from address 0 to {args.max_address}")
     # Create all the thermostats on this network/device
     # TODO this could be performed routinely to pick up network changes (move to main loop?)...
     thermostats = {}
     for address in range(0, args.max_address + 1):
-        _LOGGER.info(f"Scanning {HeatmiserUH1.name()} address {address}")
-        thermostat_type = HeatmiserThermostat.getThermostatType(HeatmiserUH1, address)
+        _LOGGER.info(f"Scanning {hub.name()} address {address}")
+        thermostat_type = HeatmiserThermostat.getThermostatType(hub, address)
         if thermostat_type != False:
             _LOGGER.info(f"Found {thermostat_type} at address {address}")
-            name = f"{HeatmiserUH1.name()}_{address}"
-            thermostats[name] = HeatmiserThermostat(address, thermostat_type, HeatmiserUH1,  name)
+            name = f"{hub.name()}_{address}"
+            thermostats[name] = HeatmiserThermostat(address, thermostat_type, hub,  name)
     if len(thermostats) < 1:
-        _LOGGER.error(f"Unable to find any thermostats on hub '{HeatmiserUH1.name()}'")
+        _LOGGER.error(f"Unable to find any thermostats on hub '{hub.name()}'")
         sys.exit(1)
 
     # Create an mqtt client
@@ -289,7 +292,7 @@ if __name__ == '__main__':
     
     # main loop
     try:
-        # enable capture of SIGINT and SIGTERM
+        # enable capture of SIGINT and SIGTERM so we can shut down gracefully if run interactively (via ctrl-C) or via daemon (SIGINT/SIGTERM)
         killer = GracefulKiller(sigint=True, sigterm=True)
         # loop every second
         last_read_time = datetime.min
@@ -317,10 +320,10 @@ if __name__ == '__main__':
                             mode = "heat" if thermostat.read_properties["Run Mode"] == "heating" else "off"
                             current_temp = str(int(float(thermostat.read_properties["Built-in Sensor Temp"])))
                             target_temp = str(int(float(thermostat.read_properties["Room Target Temp"])))
-                            _publish_base(client, climate_topic_base + "/available", "online")
-                            _publish_base(client, climate_topic_base + "/mode", mode)
-                            _publish_base(client, climate_topic_base + "/target_temp", target_temp)
-                            _publish_base(client, climate_topic_base + "/current_temp", current_temp)
+                            publish_base(client, climate_topic_base + "/available", "online")
+                            publish_base(client, climate_topic_base + "/mode", mode)
+                            publish_base(client, climate_topic_base + "/target_temp", target_temp)
+                            publish_base(client, climate_topic_base + "/current_temp", current_temp)
                             thm = thermostat.read_properties["Temp Hold Minutes"]
                             hh = thermostat.read_properties["Holiday Hours"]
                             if thm == 0 and hh == 0:
@@ -329,15 +332,15 @@ if __name__ == '__main__':
                                 preset = "holiday 1d"
                             elif thm > 0:
                                 preset = "hold 1h"
-                            _publish_base(client, climate_topic_base + "/presetState", preset)
+                            publish_base(client, climate_topic_base + "/presetState", preset)
 
                             # publish the home assistant special topics for sensor (current temperature)
-                            _publish_base(client, sensor_topic_base + "/available", "online")
+                            publish_base(client, sensor_topic_base + "/available", "online")
 
                     elif args.homeassistant:
                         # unable to read thermostat so indicate it's offline
-                        _publish_base(client, climate_topic_base + "/available", "offline")
-                        _publish_base(client, sensor_topic_base + "/available", "offline")
+                        publish_base(client, climate_topic_base + "/available", "offline")
+                        publish_base(client, sensor_topic_base + "/available", "offline")
                         published_config = False
 
                 _LOGGER.debug("Waiting for next scan...")
@@ -353,9 +356,9 @@ if __name__ == '__main__':
         if args.homeassistant:
             # publish the home assistant discovery topics to indicate offline
             climate_topic_base = f"{CLIMATEDISCOVERYBASE}/" + name
-            _publish_base(client, climate_topic_base + "/available", "offline")
+            publish_base(client, climate_topic_base + "/available", "offline")
             sensor_topic_base = f"{SENSORDISCOVERYBASE}/{name}_Current_Temp"
-            _publish_base(client, sensor_topic_base + "/available", "offline")
+            publish_base(client, sensor_topic_base + "/available", "offline")
     client.disconnect()
     _LOGGER.info("Disconected from mqtt broker")
     client.loop_stop()

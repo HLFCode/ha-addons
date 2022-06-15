@@ -1,40 +1,12 @@
-#from dataclasses import replace
-from paho.mqtt import client as mqtt_client
+"""Module of functions to provide json payloads for Home Assistant's auto-discovery"""
 import json
 
 HOMEASSISTANT = "homeassistant"
 CLIMATEDISCOVERYBASE = f"{HOMEASSISTANT}/climate"
 SENSORDISCOVERYBASE = f"{HOMEASSISTANT}/sensor"
 
-class HomeAssistantClimate():
-    """Under development"""
-    def __init__(
-            self,name: str, 
-            device_name: str, 
-            address: int, units: str, 
-            maunfacturer: str, 
-            model: str, 
-            version: str,
-            home_assistant_prefix:str = HOMEASSISTANT
-        ):
-        """"""
-        self._prefix = home_assistant_prefix
-        self._name = name
-        self._device_name = device_name
-        self._address = address
-        self._manufacturer = maunfacturer
-        self._model = model
-        self._version = version
-
-        self.minimum_temperature = 5
-        self.maximum_temperature = 35
-        self.temperature_step = 1
-        self.modes = ["off", "heat"]
-        self.units = "°C"
-        self.area = "Heating"
-
-
 def ha_climate_config(name: str, address: int, units: str, maunfacturer: str, model: str, version: str):
+    """Returns a json string representing the mqtt payload for Home Assistant's auto-discovery for a Climate entity"""
     topic = f"{CLIMATEDISCOVERYBASE}/{name}"
     payload = {
         'name' : name,
@@ -68,6 +40,7 @@ def ha_climate_config(name: str, address: int, units: str, maunfacturer: str, mo
     return json.dumps(payload)
 
 def ha_sensor_config(name: str, sensor_name: str, address: int, units: str, maunfacturer: str, model: str, version: str):
+    """Returns a json string representing the mqtt payload for Home Assistant's auto-discovery for a Sensor entity"""
     sensor_name_snake = sensor_name.replace(' ', '_').lower()
     topic = f"{SENSORDISCOVERYBASE}/{name}_{sensor_name.replace(' ', '_')}"
     payload = {
