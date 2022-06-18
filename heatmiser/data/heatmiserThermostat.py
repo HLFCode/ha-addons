@@ -80,17 +80,17 @@ class HeatmiserThermostat(object):
         if packet is False:
             return False
         if len(packet) < 1:
-            _LOGGER.debug(f"Thermostat reply error: no reply")
+            _LOGGER.debug(f"Thermostat at address {address} reply error: no reply")
             return False
         elif len(packet) < 7:
-            _LOGGER.error(f"Thermostat reply error: message too short needed >=7 bytes, received {len(packet)} bytes")
+            _LOGGER.error(f"Thermostat at address {address} reply error: message too short needed >=7 bytes, received {len(packet)} bytes")
             return False
         checksum = packet[len(packet) - 2:]
         rxmsg = packet[:len(packet) - 2]
         crc = CRC16()   # Initialises the CRC
         expectedchecksum = crc.run(rxmsg)
         if expectedchecksum != checksum:
-            # This typically happens when the thermostat loses power while commected to the RS485 bus
+            # This typically happens when the thermostat loses power while connected to the RS485 bus
             _LOGGER.error("Thermostat reply error: CRC is incorrect")
             return False
 
@@ -152,11 +152,11 @@ class HeatmiserThermostat(object):
             # hub unable to open serial port/tcp connection
             return False
         if len(packet) < 1:
-            _LOGGER.error(f"Thermostat '{self.name}' at {self.address} no reply, attempting to reinitialise comms")
+            _LOGGER.error(f"Thermostat '{self.name}' no reply, attempting to reinitialise comms")
             self._hub.disconnect()
             return False
         elif len(packet) < 7:
-            _LOGGER.error(f"Thermostat '{self.name}' at {self.address} reply error, message too short, needed >=7 bytes, received {len(packet)} bytes, attempting to reinitialise comms")
+            _LOGGER.error(f"Thermostat '{self.name}' reply error, message too short, needed >=7 bytes, received {len(packet)} bytes, attempting to reinitialise comms")
             self._hub.disconnect()
             return False
         
@@ -165,8 +165,8 @@ class HeatmiserThermostat(object):
         crc = CRC16()   # Initialises the CRC
         expectedchecksum = crc.run(rxmsg)
         if expectedchecksum != checksum:
-            # This typically happens when the thermostat loses power while commected to the RS485 bus
-            _LOGGER.error(f"Thermostat '{self.name}' at {self.address} reply error: CRC is incorrect, attempting to reinitialise comms")
+            # This typically happens when the thermostat loses power while connected to the RS485 bus
+            _LOGGER.error(f"Thermostat '{self.name}' reply error: CRC is incorrect, attempting to reinitialise comms")
             self._hub.disconnect()
             return False
 
