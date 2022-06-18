@@ -131,7 +131,7 @@ class HeatmiserHub(object):
         if self._serport is not None:
             self._serport.close()
             self._serport = None
-            _LOGGER.info(f"Closed serial port {self._device_or_ipaddress}")
+            _LOGGER.info(f"Closed serial device {self._device_or_ipaddress}")
 
     def __del__(self):
         """Destructor"""
