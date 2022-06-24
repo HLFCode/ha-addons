@@ -9,3 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2022 06 18  
 ### Changed  
 - Improved recovery from thermostat not responding
+## [0.2.0] - 2022 06 24
+### Changed
+- Fix 2 byte sensor values wrongly decoded with values greater than 25.5

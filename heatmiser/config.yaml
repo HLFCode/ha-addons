@@ -1,7 +1,7 @@
 name: "Heatmiser"
 description: >
     Access to Heatmiser Thermostats.
-version: "0.1.1"
+version: "0.2.0"
 slug: "heatmiser"
 init: false
 startup: system
